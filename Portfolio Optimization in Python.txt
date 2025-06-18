@@ -1,0 +1,99 @@
+# Import Required Librarires 
+import yfinance as yf
+import pandas as pd
+from datetime import datetime, timedelta
+import numpy as np
+from scipy.optimize import minimize
+from fredapi import Fred
+import matplotlib.pyplot as plt
+
+# Section 1: Define Tickers and Time Range
+tickers = ['SPY', 'BND', 'GLD', 'QQQ', 'VTI']
+
+# Set the end date to today
+end_date = datetime.today()
+
+# Set the start date to 5 years ago
+start_date = end_date - timedelta(days=5 * 365)
+
+# Section 2: Download Close Prices
+# Create an empty DataFrame to store the adjusted close prices
+adj_close_df = pd.DataFrame()
+
+# Download the close prices for each ticker
+for ticker in tickers:
+    print(f"Downloading data for {ticker}...")
+    data = yf.download(ticker, start=start_date, end=end_date)
+
+    if 'Close' in data.columns and not data.empty:
+        adj_close_df[ticker] = data['Close']
+    else:
+        print(f"'{ticker}' data is missing or empty, skipping.")
+
+# Section 3: Calculate Logarithmic Returns
+# Calculate the logonormal returns for each tickers
+log_returns = np.log(adj_close_df / adj_close_df.shift(1)).dropna()
+
+# Section 4: Calculate Covariance Matrix
+# Calculate the covariance matrix using annualized log returns
+cov_matrix = log_returns.cov() * 252
+
+# Section 5: Define Portfolio Performance Metrics
+# Calculate the Portfolio Standard Deviation
+def standard_deviation(weights, cov_matrix):
+    variance = weights.T @ cov_matrix @ weights
+    return np.sqrt(variance)
+
+# Calcualte the Expected Return
+def expected_return(weights, log_returns):
+    return np.sum(log_returns.mean() * weights) * 252
+
+# Calculate the Sharpe Ratio
+def sharpe_ratio(weights, log_returns, cov_matrix, risk_free_rate):
+    return (expected_return(weights, log_returns) - risk_free_rate) / standard_deviation(weights, cov_matrix)
+
+# Section 6: Portfolio Optimization
+# Setting up the FredAPI Key
+fred = Fred(api_key='189872e56e87c2a674b98c905c49a289')
+ten_year_treasury_rate = fred.get_series_latest_release('GS10') / 100
+risk_free_rate = ten_year_treasury_rate.iloc[-1]
+
+# Define the function to minimize (negative Sharpe Ratio)
+def neg_sharpe_ratio(weights, log_returns, cov_matrix, risk_free_rate):
+    return -sharpe_ratio(weights, log_returns, cov_matrix, risk_free_rate)
+
+# Set the constraints and bounds
+constraints = {'type': 'eq', 'fun': lambda weights: np.sum(weights) - 1}
+bounds = [(0, 0.5) for _ in range(len(tickers))]
+
+# Set the initial weights
+initial_weights = np.array([1 / len(tickers)] * len(tickers))
+
+# Optimize the weights to maximize Sharpe Ratio
+optimized_results = minimize(neg_sharpe_ratio, initial_weights, args=(log_returns, cov_matrix, risk_free_rate), method='SLSQP', constraints=constraints, bounds=bounds)
+
+# Get the Optimal Weights
+optimal_weights = optimized_results.x
+
+# Section 7: Analyze the Optimal Portfolio
+# Display analytics of the optimal portfolio
+print("Optimal Weights:")
+for ticker, weight in zip(tickers, optimal_weights):
+    print(f"{ticker}: {weight:.4f}")
+
+optimal_portfolio_return = expected_return(optimal_weights, log_returns)
+optimal_portfolio_volatility = standard_deviation(optimal_weights, cov_matrix)
+optimal_sharpe_ratio = sharpe_ratio(optimal_weights, log_returns, cov_matrix, risk_free_rate)
+
+print(f"\nExpected Annual Return: {optimal_portfolio_return:.4f}")
+print(f"Expected Volatility: {optimal_portfolio_volatility:.4f}")
+print(f"Sharpe Ratio: {optimal_sharpe_ratio:.4f}")
+
+# Display the final portfolio in a plot
+plt.figure(figsize=(10, 6))
+plt.bar(tickers, optimal_weights)
+plt.xlabel('Assets')
+plt.ylabel('Optimal Portfolio Weights')
+plt.title('Optimized Portfolio Allocation')
+plt.show()
+
