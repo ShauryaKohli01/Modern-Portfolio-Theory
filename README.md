@@ -61,6 +61,7 @@ The code successfully demonstrates the use of Modern Portfolio Theory to constru
 By using real-world data and economic indicators, the model ensures practical relevance. Such optimization techniques can be valuable tools in asset management, wealth advisory, and personal investment planning. From the model we get the Optimal Weights as:
 
 Optimal Weights:
+
 •	SPY: 0.5000
 
 •	BND: 0.0000
