@@ -62,12 +62,19 @@ By using real-world data and economic indicators, the model ensures practical re
 
 Optimal Weights:
 •	SPY: 0.5000
+
 •	BND: 0.0000
+
 •	GLD: 0.5000
+
 •	QQQ: 0.0000
+
 •	VTI: 0.0000
+
 •	Expected Annual Return: 0.1378
+
 •	Expected Volatility: 0.1250
+
 •	Sharpe Ratio: 0.7490
 
 # Displaying the Plot Figure
