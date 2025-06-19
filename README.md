@@ -82,6 +82,9 @@ Optimal Weights:
 
 ![image](https://github.com/user-attachments/assets/ff201dd5-9d67-4cfa-8c55-0b0fd274ca43)
 
+# Youtube Video:
+https://www.youtube.com/watch?v=oszqwwDoFqQ&t=31s
+
 # Video Tutorial:
 https://www.youtube.com/watch?v=9GA2WlYFeBU
 
